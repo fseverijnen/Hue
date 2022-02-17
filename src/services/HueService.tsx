@@ -3,7 +3,7 @@ import { CLIENT_KEY, HUE_API_URL, USERNAME } from '../constants';
 import { GenericError } from "../models/GenericError";
 import { Group } from "../models/Group";
 import { HueError } from "../models/HueError";
-import { Light } from "../models/Light";
+import { Light, LightState } from "../models/Light";
 import { MotionSensor } from "../models/MotionSensor";
 
 export const GenerateClientKey = async (): Promise<string | GenericError> => {
@@ -65,6 +65,26 @@ export const getLights = async (): Promise<any> => {
   }
 }
 
+export const getLightById = async (id: string): Promise<any> => {
+  try {
+    const response = await axios.request({
+      method: 'GET',
+      baseURL: `${HUE_API_URL}/api/${USERNAME}/lights/${id}`
+    });
+  
+    if (response.data[0]?.error) {
+      return handleHueError(response.data[0].error);
+    }
+
+    const light = response.data as Light;
+
+    return light;
+  }
+  catch (err) {
+    console.error(JSON.stringify(err))
+  }
+}
+
 export const setLightStateOnOff = async (lightId: string, on: boolean) => {
   try {
     const response = await axios.request({
@@ -78,7 +98,26 @@ export const setLightStateOnOff = async (lightId: string, on: boolean) => {
       return handleHueError(response.data[0].error);
     }
 
-    console.log(response.data)
+    return Object.values(response.data);
+  }
+  catch (err) {
+    console.error(JSON.stringify(err))
+  }
+}
+
+export const setLightState = async (lightId: string, state: LightState) => {
+  try {
+    const response = await axios.request({
+      method: 'PUT',
+      baseURL: `${HUE_API_URL}/api/${USERNAME}/lights/${lightId}/state`,
+      data: {
+        ...state
+      }
+    });
+
+    if (response.data[0]?.error) {
+      return handleHueError(response.data[0].error);
+    }
 
     return Object.values(response.data);
   }

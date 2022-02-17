@@ -1,41 +1,58 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, Paragraph, Text, Surface, Title, TouchableRipple } from 'react-native-paper';
+import { Card, Paragraph, Text, Surface, Title, TouchableRipple, List } from 'react-native-paper';
 import { Group } from '../models/Group';
 import { Light } from '../models/Light';
-import { setGroupStateOnOff, setLightStateOnOff } from '../services/HueService';
+import { getLightById, setGroupStateOnOff, setLightStateOnOff } from '../services/HueService';
+import LightListItem from './LightListItem';
 
 interface ILightProps {
   group: Group;
-  getGroupsFromApi: () => {};
+  navigation: any;
 }
 
-export default function GroupTile({ group, getGroupsFromApi}: ILightProps) {
-  const [loading, setLoading] = useState<boolean>(false);
+export default function GroupTile({ group, navigation }: ILightProps) {
+  const [expanded, setExpanded] = useState<boolean>(false);
+  const [lights, setLights] = useState<any[]>([]);
 
-  const updateGroup = async (groupId: string, state: boolean) => {
-    setLoading(true);
-    await setGroupStateOnOff(groupId, state);
-    await getGroupsFromApi();
-    setLoading(false);
+  const handlePress = () => setExpanded(!expanded);
+
+  const getLightByIdFromApi = async (id: string): Promise<Light> => {
+    const light = await getLightById(id);
+    return light;
   }
 
-  if (!loading) {
-    return (
-      <TouchableRipple style={group.state.all_on ? styles.on : styles.default} rippleColor='rgba(0, 0, 0, 90)'
-        onPress={() => updateGroup(group.id!, !group.state.all_on)}>
-        <Text>{group.name}</Text>
-      </TouchableRipple>
-    );
-  } else {
-    return (
-      <TouchableRipple style={styles.disabled} rippleColor='rgba(0, 0, 0, 90)'>
-        <Text>{group.name}</Text>
-      </TouchableRipple>
-    );
+  const getLightsForGroup = async () => {
+    const lightsArray: any[] = [];
+    group.lights.forEach(async (lightId: string) => {
+      lightsArray.push({ light: await getLightByIdFromApi(lightId), lightId });
+    });
+    setLights(lightsArray);
   }
-  
+
+  const navigateToLightDetails = (light: Light, lightId: string) => {
+    navigation.setOptions({ headerTitle: light.name })
+    navigation.navigate('Light details', {
+      light,
+      lightId,
+      title: light.name
+    });
+  }
+
+  useEffect(() => {
+    (async () => {
+      await getLightsForGroup();
+    })()
+  }, [])
+
+  return (
+    <List.Accordion title={group.name} onPress={handlePress} expanded={expanded}>
+      {lights.map((item: any) => {
+        return <LightListItem key={item.light.uniqueid} light={item.light} id={item.lightId} onPress={() => navigateToLightDetails(item.light, item.lightId)} />
+      })}
+    </List.Accordion>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -58,12 +75,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'green'
   },
   disabled: {
-    margin: 4,
-    padding: 8,
-    height: 120,
-    width: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#111111'
+    backgroundColor: '#fff'
   }
 });

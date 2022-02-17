@@ -1,6 +1,6 @@
 export interface Light {
   id?:              string;
-  state:            State;
+  state:            LightState;
   swupdate:         Swupdate;
   type:             string;
   name:             string;
@@ -49,18 +49,18 @@ interface Startup {
   configured: boolean;
 }
 
-interface State {
-  on:        boolean;
-  bri:       number;
-  hue:       number;
-  sat:       number;
-  effect:    string;
-  xy:        number[];
-  ct:        number;
-  alert:     string;
-  colormode: string;
-  mode:      string;
-  reachable: boolean;
+export interface LightState {
+  on?:        boolean;
+  bri?:       number;
+  hue?:       number;
+  sat?:       number;
+  effect?:    string;
+  xy?:        number[];
+  ct?:        number;
+  alert?:     string;
+  colormode?: string;
+  mode?:      string;
+  reachable?: boolean;
 }
 
 interface Swupdate {
